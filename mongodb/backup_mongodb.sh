@@ -7,10 +7,11 @@
 : ${tag_name=`hostname`}
 : ${tag_date=`/bin/date +%a`}
 : ${tag="$tag_name.$tag_date"}
-: ${dump_path="/var/tmp"}
+: ${dump_path="/var/tmp/mongo"}
 : ${dump_name="{db}.${tag}.bk.gz"}
 : ${scp_host=}
 : ${cp_path=}
+: ${max_dump_days=}
 
 # Verify mongod is running on this node
 if [[ $mongo_host == "localhost" ]] && ! pidof mongod; then
@@ -18,9 +19,23 @@ if [[ $mongo_host == "localhost" ]] && ! pidof mongod; then
   exit 1
 fi
 
-if ! which mongod </dev/null >/dev/null 2>&1 ; then
+# Check to make sure path exists, or can be created
+if ! mkdir -p $dump_path; then
+  echo "ERROR: Failed to create $dump_path directory. Unable to proceed" >&2
+  exit 1
+fi
+
+# Verify we have a mongodump binary
+if ! which mongodump </dev/null >/dev/null 2>&1 ; then
   echo "ERROR: no mongodump binary exist" >&2
   exit 1
+fi
+
+# Cleanup old dumps first, only report errors, don't exit
+if [ $max_dump_days ]; then
+  echo "INFO: Cleaning up old dumps before starting backups"
+  if ! find $dump_path -type f -name ${dump_name/\{db\}*/}* -mtime +$max_dump_days -exec rm -vf {} \;; then
+  echo "ERROR: Failed to cleanup old dumps" >&2
 fi
 
 echo "Starting Mongo Backup `date`"
