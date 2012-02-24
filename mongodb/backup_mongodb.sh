@@ -45,7 +45,7 @@ for db in ${mongo_dbs}; do
   echo "INFO: Backup $db to $tmp_dump_path"
 
   # Dump our db, report an error but don't exit on failure
-  if ! mongodump --host $mongo_host --db $db --out "-" | gzip > $tmp_dump_path; then
+  if ! mongodump --host $mongo_host --db $db --oplog --out "-" | gzip > $tmp_dump_path; then
     echo "ERROR: Failed to dump $db from $mongo_host" >&2
   else 
     # Copy our dump to other hosts/directory for safe keeping if specified
