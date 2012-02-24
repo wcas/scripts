@@ -14,7 +14,7 @@
 : ${max_dump_days=}
 
 # Verify mongod is running on this node
-if [[ $mongo_host == "localhost" ]] && ! pidof mongod; then
+if [[ $mongo_host == "localhost" ]] && ! pidof mongod </dev/null >/dev/null 2>&1; then
   echo "ERROR: No mongod process running on localhost to dump" >&2
   exit 1
 fi
@@ -35,7 +35,8 @@ fi
 if [ $max_dump_days ]; then
   echo "INFO: Cleaning up old dumps before starting backups"
   if ! find $dump_path -type f -name ${dump_name/\{db\}*/}* -mtime +$max_dump_days -exec rm -vf {} \;; then
-  echo "ERROR: Failed to cleanup old dumps" >&2
+    echo "ERROR: Failed to cleanup old dumps" >&2
+  fi
 fi
 
 echo "Starting Mongo Backup `date`"
